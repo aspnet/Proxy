@@ -12,7 +12,7 @@ using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.TestHost;
 using Xunit;
 
-namespace Microsoft.AspNet.Proxy.Test
+namespace Microsoft.AspNet.Proxy.Tests
 {
     public class PassthroughProxyTest
     {
