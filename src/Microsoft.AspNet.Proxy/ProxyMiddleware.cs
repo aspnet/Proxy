@@ -50,7 +50,7 @@ namespace Microsoft.AspNet.Proxy
 #if DNX451
             _httpClient = new HttpClient(_options.BackChannelMessageHandler?? new HttpClientHandler());
 #else
-            _httpClient = new HttpClient(_options.BackChannelMessageHandler?? new Net.Http.Client.ManagedHandler());
+            _httpClient = new HttpClient(_options.BackChannelMessageHandler?? new HttpClientHandler());
 #endif
 
         }
