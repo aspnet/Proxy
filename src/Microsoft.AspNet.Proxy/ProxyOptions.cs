@@ -8,11 +8,12 @@ namespace Microsoft.AspNet.Proxy
     /// <summary>
     /// Options to configure host, scheme, and port settings
     /// </summary>
-    public class ProxyOptions
+    public class ProxyOptions: IProxyOptions
     {
         public string Scheme { get; set; }
         public string Host { get; set; }
         public string Port { get; set; }
         public HttpMessageHandler BackChannelMessageHandler { get; set; }
     }
+
 }

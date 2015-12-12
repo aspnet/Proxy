@@ -17,5 +17,16 @@ namespace Microsoft.AspNet.Builder
         {
             return builder.UseMiddleware<ProxyMiddleware>(options);
         }
+
+        /// <summary>
+        /// Sends request to remote server as specified in options array
+        /// </summary>
+        /// <param name="builder"></param>
+        /// <param name="options">Options to configure multi domain to multi proxy host</param>
+        /// <returns></returns>
+        public static IApplicationBuilder RunProxy(this IApplicationBuilder builder, MultiProxyDictionaryOptions options)
+        {
+            return builder.UseMiddleware<ProxyMiddleware>(options);
+        }
     }
 }

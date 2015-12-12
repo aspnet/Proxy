@@ -15,7 +15,7 @@ namespace Microsoft.AspNet.Proxy
         private readonly RequestDelegate _next;
         private readonly HttpClient _httpClient;
         private readonly ProxyOptions _options;
-
+        MultiProxyDictionaryOptions _optionsDict;
         public ProxyMiddleware(RequestDelegate next, ProxyOptions options)
         {
             if (next == null)
@@ -57,7 +57,52 @@ namespace Microsoft.AspNet.Proxy
 
             _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler());
         }
+        public ProxyMiddleware(RequestDelegate next, MultiProxyDictionaryOptions options)
+        {
+            if (next == null)
+            {
+                throw new ArgumentNullException(nameof(next));
+            }
 
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            _next = next;
+            if (options.Values.Any(c=> string.IsNullOrEmpty(c.Host)))
+            {
+                throw new ArgumentException("Options parameter must specify host.", "options");
+            }
+
+            // Setting default Port and Scheme if not specified
+            var defaultPortList = options.Values;
+            foreach (var item in defaultPortList)
+            {
+                if (string.IsNullOrWhiteSpace(item.Port))
+                {
+                    if (string.Equals(item.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+                    {
+                        item.Port = "443";
+                    }
+                    else
+                    {
+                        item.Port = "80";
+                    }
+                }
+                if (string.IsNullOrEmpty(item.Scheme))
+                {
+                    item.Scheme = "http";
+                }
+            }
+
+
+            _optionsDict = options;
+
+            _options = null;//options;
+
+            _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler());
+        }
         public async Task Invoke(HttpContext context)
         {
             var requestMessage = new HttpRequestMessage();
@@ -78,10 +123,22 @@ namespace Microsoft.AspNet.Proxy
                     requestMessage.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
                 }
             }
-
-            requestMessage.Headers.Host = _options.Host + ":" + _options.Port;
-            var uriString = $"{_options.Scheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+            IProxyOptions options = _options;
+            if (options == null)
+            {
+                if (_optionsDict.ContainsKey(context.Request.Host.Value))
+                {
+                    options = _optionsDict[context.Request.Host.Value];
+                }
+                else
+                {
+                    options = _optionsDict.DefaultOptions;
+                }
+            }
+            requestMessage.Headers.Host = options.Host + ":" + options.Port;
+            var uriString = $"{options.Scheme}://{options.Host}:{options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
             requestMessage.RequestUri = new Uri(uriString);
+
             requestMessage.Method = new HttpMethod(context.Request.Method);
             using (var responseMessage = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted))
             {
