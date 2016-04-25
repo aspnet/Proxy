@@ -1,0 +1,36 @@
+{
+  "version": "1.0.0-*",
+  "description": "Microsoft.AspNetCore.Proxy.Test Class Library",
+  "dependencies": {
+    "Microsoft.NETCore.Platforms": "1.0.1-*",
+    "Microsoft.AspNetCore.Proxy": "0.1.0-*",
+    "Microsoft.AspNetCore.TestHost": "1.0.0-*",
+    "xunit": "2.1.0"
+  },
+  "frameworks": {
+    "netcoreapp1.0": {
+      "dependencies": {
+        "Microsoft.NETCore.App": {
+          "version": "1.0.0-*",
+          "type": "platform"
+        },
+        "dotnet-test-xunit": "1.0.0-*",
+        "System.Diagnostics.Process": "4.1.0-*"
+      },
+      "imports": [
+        "dnxcore50",
+        "portable-net451+win8"
+      ]
+    },
+    "net451": {
+      "frameworkAssemblies": {
+        "System.Runtime": "",
+        "System.Threading.Tasks": ""
+      },
+      "dependencies": {
+        "xunit.runner.console": "2.1.0"
+      }
+    }
+  },
+  "testRunner": "xunit"
+}
