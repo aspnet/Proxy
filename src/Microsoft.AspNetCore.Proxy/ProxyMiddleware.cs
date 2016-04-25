@@ -80,7 +80,7 @@ namespace Microsoft.AspNetCore.Proxy
                 }
             }
 
-            requestMessage.Headers.Host = _options.Host + ":" + _options.Port;
+            requestMessage.Headers.Host = $"{_options.Host}:{_options.Port}";
             var uriString = $"{_options.Scheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
             requestMessage.RequestUri = new Uri(uriString);
             requestMessage.Method = new HttpMethod(context.Request.Method);
