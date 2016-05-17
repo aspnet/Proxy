@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0-*",
+  "version": "0.1.0-rc2-final",
   "buildOptions": {
     "warningsAsErrors": true,
     "keyFile": "../../tools/Key.snk",
@@ -16,8 +16,8 @@
     }
   },
   "dependencies": {
-    "Microsoft.AspNetCore.Http.Abstractions": "1.0.0-*",
-    "Microsoft.Extensions.Options": "1.0.0-*"
+    "Microsoft.AspNetCore.Http.Abstractions": "1.0.0-rc2-final",
+    "Microsoft.Extensions.Options": "1.0.0-rc2-final"
   },
   "frameworks": {
     "net451": {
@@ -27,7 +27,7 @@
     },
     "netstandard1.3": {
       "dependencies": {
-        "System.Net.Http": "4.0.1-*"
+        "System.Net.Http": "4.0.1-rc2-24027"
       }
     }
   }
