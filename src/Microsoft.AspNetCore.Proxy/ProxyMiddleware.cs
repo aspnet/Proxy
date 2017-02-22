@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using System.Threading;
+using System.Net.WebSockets;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -16,6 +18,8 @@ namespace Microsoft.AspNetCore.Proxy
         private readonly RequestDelegate _next;
         private readonly HttpClient _httpClient;
         private readonly ProxyOptions _options;
+
+        private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
 
         public ProxyMiddleware(RequestDelegate next, IOptions<ProxyOptions> options)
         {
@@ -59,8 +63,51 @@ namespace Microsoft.AspNetCore.Proxy
             _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler());
         }
 
-        public async Task Invoke(HttpContext context)
+        public Task Invoke(HttpContext context) => context.WebSockets.IsWebSocketRequest ? HandleWebSocketRequest(context) : HandleHttpRequest(context);
+
+        private async Task HandleWebSocketRequest(HttpContext context)
         {
+            using (var client = new ClientWebSocket())
+            {
+                foreach (var kv in context.Request.Headers)
+                {
+                    if (!NotForwardedWebSocketHeaders.Contains(kv.Key))
+                    {
+                        client.Options.SetRequestHeader(kv.Key, kv.Value);
+                    }
+                }
+
+                var wsScheme = string.Equals(_options.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws";
+                var uriString = $"{wsScheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+
+                await client.ConnectAsync(new Uri(uriString), CancellationToken.None);
+                using (var server = await context.WebSockets.AcceptWebSocketAsync(client.SubProtocol))
+                {
+                    await Task.WhenAll(PumpWebSocket(client, server), PumpWebSocket(server, client));
+                }
+            }
+        }
+
+        private static async Task PumpWebSocket(WebSocket source, WebSocket dest)
+        {
+            var buffer = new byte[4096];
+            while (true)
+            {
+                var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (res.MessageType == WebSocketMessageType.Close)
+                {
+                    await dest.CloseAsync(source.CloseStatus.Value, source.CloseStatusDescription, CancellationToken.None);
+                    return;
+                }
+                else
+                {
+                    await dest.SendAsync(new ArraySegment<byte>(buffer, 0, res.Count), res.MessageType, res.EndOfMessage, CancellationToken.None);
+                }
+            }
+        }
+
+        private async Task HandleHttpRequest(HttpContext context)
+        { 
             var requestMessage = new HttpRequestMessage();
             var requestMethod = context.Request.Method;
             if (!HttpMethods.IsGet(requestMethod)&&

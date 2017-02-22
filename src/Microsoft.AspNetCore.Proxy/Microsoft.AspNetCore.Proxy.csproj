@@ -4,7 +4,7 @@
 
   <PropertyGroup>
     <Description>Proxy Library</Description>
-    <TargetFrameworks>net451;netstandard1.3</TargetFrameworks>
+    <TargetFrameworks>net46;netstandard1.3</TargetFrameworks>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>aspnetcore</PackageTags>
@@ -12,7 +12,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="1.2.0-*" />
+    <PackageReference Include="Microsoft.AspNetCore.WebSockets" Version="1.0.0-*" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="1.2.0-*" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.4.0-*" />
   </ItemGroup>
 
 </Project>
