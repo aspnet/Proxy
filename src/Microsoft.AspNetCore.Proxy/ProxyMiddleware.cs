@@ -72,7 +72,7 @@ namespace Microsoft.AspNetCore.Proxy
             {
                 foreach (var kv in context.Request.Headers)
                 {
-                    if (!NotForwardedWebSocketHeaders.Contains(kv.Key))
+                    if (!NotForwardedWebSocketHeaders.Contains(kv.Key, StringComparer.OrdinalIgnoreCase))
                     {
                         client.Options.SetRequestHeader(kv.Key, kv.Value);
                     }
@@ -122,7 +122,7 @@ namespace Microsoft.AspNetCore.Proxy
                 var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                 if (res.MessageType == WebSocketMessageType.Close)
                 {
-                    await dest.CloseAsync(source.CloseStatus.Value, source.CloseStatusDescription, ct);
+                    await dest.CloseOutputAsync(source.CloseStatus.Value, source.CloseStatusDescription, ct);
                     return;
                 }
                 else
