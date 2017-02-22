@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System.Threading;
 using System.Net.WebSockets;
+using System.Net;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -80,28 +81,53 @@ namespace Microsoft.AspNetCore.Proxy
                 var wsScheme = string.Equals(_options.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws";
                 var uriString = $"{wsScheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
 
-                await client.ConnectAsync(new Uri(uriString), CancellationToken.None);
+                if (_options.WebSocketKeepAliveInterval.HasValue)
+                {
+                    client.Options.KeepAliveInterval = _options.WebSocketKeepAliveInterval.Value;
+                }
+
+                try
+                {
+                    await client.ConnectAsync(new Uri(uriString), context.RequestAborted);
+                }
+                catch (WebSocketException ex)
+                {
+                    HandleWebSocketConnectError(context, ex);
+                    return;
+                }
+
                 using (var server = await context.WebSockets.AcceptWebSocketAsync(client.SubProtocol))
                 {
-                    await Task.WhenAll(PumpWebSocket(client, server), PumpWebSocket(server, client));
+                    await Task.WhenAll(PumpWebSocket(client, server, context.RequestAborted), PumpWebSocket(server, client, context.RequestAborted));
                 }
             }
         }
 
-        private static async Task PumpWebSocket(WebSocket source, WebSocket dest)
+        private void HandleWebSocketConnectError(HttpContext context, WebSocketException ex)
+        {
+            //WebException is not available in netstandard13
+            //TODO: Uncomment and forward response when implemented
+            //var res = (ex.InnerException as WebException)?.Response;
+            //if (res != null)
+            //{
+            //}
+            context.Response.StatusCode = 400;
+        }
+
+        private static async Task PumpWebSocket(WebSocket source, WebSocket dest, CancellationToken ct)
         {
             var buffer = new byte[4096];
             while (true)
             {
-                var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
                 if (res.MessageType == WebSocketMessageType.Close)
                 {
-                    await dest.CloseAsync(source.CloseStatus.Value, source.CloseStatusDescription, CancellationToken.None);
+                    await dest.CloseAsync(source.CloseStatus.Value, source.CloseStatusDescription, ct);
                     return;
                 }
                 else
                 {
-                    await dest.SendAsync(new ArraySegment<byte>(buffer, 0, res.Count), res.MessageType, res.EndOfMessage, CancellationToken.None);
+                    await dest.SendAsync(new ArraySegment<byte>(buffer, 0, res.Count), res.MessageType, res.EndOfMessage, ct);
                 }
             }
         }

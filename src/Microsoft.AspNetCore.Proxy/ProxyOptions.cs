@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using System.Net.Http;
 
 namespace Microsoft.AspNetCore.Builder
@@ -14,5 +15,6 @@ namespace Microsoft.AspNetCore.Builder
         public string Host { get; set; }
         public string Port { get; set; }
         public HttpMessageHandler BackChannelMessageHandler { get; set; }
+        public TimeSpan? WebSocketKeepAliveInterval { get; set; }
     }
 }
