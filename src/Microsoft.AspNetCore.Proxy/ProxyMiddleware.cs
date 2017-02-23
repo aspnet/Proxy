@@ -1,21 +1,22 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
-using System.Threading;
+using System;
+using System.Linq;
+using System.Net.Http;
 using System.Net.WebSockets;
-using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Microsoft.AspNetCore.Proxy
 {
     public class ProxyMiddleware
     {
+        private const int DefaultWebSocketBufferSize = 4096;
+
         private readonly RequestDelegate _next;
         private readonly HttpClient _httpClient;
         private readonly ProxyOptions _options;
@@ -70,11 +71,11 @@ namespace Microsoft.AspNetCore.Proxy
         {
             using (var client = new ClientWebSocket())
             {
-                foreach (var kv in context.Request.Headers)
+                foreach (var headerEntry in context.Request.Headers)
                 {
-                    if (!NotForwardedWebSocketHeaders.Contains(kv.Key, StringComparer.OrdinalIgnoreCase))
+                    if (!NotForwardedWebSocketHeaders.Contains(headerEntry.Key, StringComparer.OrdinalIgnoreCase))
                     {
-                        client.Options.SetRequestHeader(kv.Key, kv.Value);
+                        client.Options.SetRequestHeader(headerEntry.Key, headerEntry.Value);
                     }
                 }
 
@@ -114,9 +115,9 @@ namespace Microsoft.AspNetCore.Proxy
             context.Response.StatusCode = 400;
         }
 
-        private static async Task PumpWebSocket(WebSocket source, WebSocket dest, CancellationToken ct)
+        private async Task PumpWebSocket(WebSocket source, WebSocket dest, CancellationToken ct)
         {
-            var buffer = new byte[4096];
+            var buffer = new byte[_options.WebSocketBufferSize ?? DefaultWebSocketBufferSize];
             while (true)
             {
                 var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), ct);

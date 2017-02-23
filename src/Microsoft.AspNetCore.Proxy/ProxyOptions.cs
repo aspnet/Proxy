@@ -11,10 +11,17 @@ namespace Microsoft.AspNetCore.Builder
     /// </summary>
     public class ProxyOptions
     {
+        private int? _webSocketBufferSize;
+
         public string Scheme { get; set; }
         public string Host { get; set; }
         public string Port { get; set; }
         public HttpMessageHandler BackChannelMessageHandler { get; set; }
         public TimeSpan? WebSocketKeepAliveInterval { get; set; }
+        public int? WebSocketBufferSize
+        {
+            get => _webSocketBufferSize;
+            set => _webSocketBufferSize = value.HasValue && value.Value <= 0 ? throw new ArgumentOutOfRangeException(nameof(value)) : value;
+        }
     }
 }
