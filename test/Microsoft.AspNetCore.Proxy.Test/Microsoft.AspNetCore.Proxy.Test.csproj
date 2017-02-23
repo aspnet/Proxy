@@ -6,6 +6,11 @@
     <TargetFrameworks>netcoreapp1.1;net46</TargetFrameworks>
     <TargetFrameworks Condition=" '$(OS)' != 'Windows_NT' ">netcoreapp1.1</TargetFrameworks>
   </PropertyGroup>
+  <PropertyGroup>
+    <!-- TODO remove when https://github.com/Microsoft/vstest/issues/428 is resolved -->
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Microsoft.AspNetCore.Proxy\Microsoft.AspNetCore.Proxy.csproj" />
