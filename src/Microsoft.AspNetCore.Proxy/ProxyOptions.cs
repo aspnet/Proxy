@@ -21,7 +21,14 @@ namespace Microsoft.AspNetCore.Builder
         public int? WebSocketBufferSize
         {
             get => _webSocketBufferSize;
-            set => _webSocketBufferSize = value.HasValue && value.Value <= 0 ? throw new ArgumentOutOfRangeException(nameof(value)) : value;
+            set 
+            {
+                if (value.HasValue && value.Value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value));
+                }
+                _webSocketBufferSize = value;
+            }
         }
     }
 }
