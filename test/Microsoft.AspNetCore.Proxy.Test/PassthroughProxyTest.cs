@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Xunit;
 
@@ -18,20 +19,18 @@ namespace Microsoft.AspNetCore.Proxy.Test
     public class ProxyTest
     {
         [Theory]
-        [InlineData("GET", "3001")]
-        [InlineData("HEAD", "3002")]
-        [InlineData("TRACE", "3003")]
-        [InlineData("DELETE", "3004")]
-        public async Task PassthroughRequestsWithoutBodyWithResponseHeaders(string MethodType, string Port)
+        [InlineData("GET", 3001)]
+        [InlineData("HEAD", 3002)]
+        [InlineData("TRACE", 3003)]
+        [InlineData("DELETE", 3004)]
+        public async Task PassthroughRequestsWithoutBodyWithResponseHeaders(string MethodType, int Port)
         {
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
                     app.RunProxy(new ProxyOptions
                     {
-                        Scheme = "http",
-                        Host = "localhost",
-                        Port = Port,
+                        RouteHandler = ctx => ctx.ForwardRequestTo("http", new HostString("localhost", Port)),
                         BackChannelMessageHandler = new TestMessageHandler
                         {
                             Sender = req =>
@@ -63,20 +62,18 @@ namespace Microsoft.AspNetCore.Proxy.Test
         }
 
         [Theory]
-        [InlineData("POST", "3005")]
-        [InlineData("PUT", "3006")]
-        [InlineData("OPTIONS", "3007")]
-        [InlineData("NewHttpMethod", "3008")]
-        public async Task PassthroughReuestWithBody(string MethodType, string Port)
+        [InlineData("POST", 3005)]
+        [InlineData("PUT", 3006)]
+        [InlineData("OPTIONS", 3007)]
+        [InlineData("NewHttpMethod", 3008)]
+        public async Task PassthroughRequestsWithBody(string MethodType, int Port)
         {
             var builder = new WebHostBuilder()
                 .Configure(app =>
                 {
                     app.RunProxy(new ProxyOptions
                     {
-                        Scheme = "http",
-                        Host = "localhost",
-                        Port = Port,
+                        RouteHandler = ctx => ctx.ForwardRequestTo("http", new HostString("localhost", Port)),
                         BackChannelMessageHandler = new TestMessageHandler
                         {
                             Sender = req =>

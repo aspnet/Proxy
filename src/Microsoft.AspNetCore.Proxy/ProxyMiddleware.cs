@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Proxy
@@ -38,36 +39,29 @@ namespace Microsoft.AspNetCore.Proxy
             _next = next;
             _options = options.Value;
 
-            if (string.IsNullOrEmpty(_options.Host))
-            {
-                throw new ArgumentException("Options parameter must specify host.", nameof(options));
-            }
-
-            // Setting default Port and Scheme if not specified
-            if (string.IsNullOrEmpty(_options.Port))
-            {
-                if (string.Equals(_options.Scheme, "https", StringComparison.OrdinalIgnoreCase))
-                {
-                    _options.Port = "443";
-                }
-                else
-                {
-                    _options.Port = "80";
-                }
-
-            }
-
-            if (string.IsNullOrEmpty(_options.Scheme))
-            {
-                _options.Scheme = "http";
-            }
-
             _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler());
         }
 
-        public Task Invoke(HttpContext context) => context.WebSockets.IsWebSocketRequest ? HandleWebSocketRequest(context) : HandleHttpRequest(context);
+        public Task Invoke(HttpContext context)
+        {
+            var handler = _options.RouteHandler;
+            if (handler != null)
+            {
+                return handler(new ProxyRoutingContext(this, context));
+            }
+            else
+            {
+                context.Response.StatusCode = 404;
+                return Task.FromResult(0);
+            }
+        }
 
-        private async Task HandleWebSocketRequest(HttpContext context)
+        internal Task ForwardRequestTo(HttpContext context, string scheme, HostString host, PathString path, QueryString query) => 
+            context.WebSockets.IsWebSocketRequest ? ForwardWebSocketRequestTo(context, scheme, host, path, query) : ForwardStandardHttpRequestTo(context, scheme, host, path, query);
+
+        private static string TranslateHttpSchemeToWsScheme(string scheme) => string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws";
+
+        private async Task ForwardWebSocketRequestTo(HttpContext context, string scheme, HostString host, PathString path, QueryString query)
         {
             using (var client = new ClientWebSocket())
             {
@@ -79,8 +73,7 @@ namespace Microsoft.AspNetCore.Proxy
                     }
                 }
 
-                var wsScheme = string.Equals(_options.Scheme, "https", StringComparison.OrdinalIgnoreCase) ? "wss" : "ws";
-                var uriString = $"{wsScheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+                var uriString = UriHelper.BuildAbsolute(TranslateHttpSchemeToWsScheme(scheme), host, path, context.Request.Path, query.Add(context.Request.QueryString));
 
                 if (_options.WebSocketKeepAliveInterval.HasValue)
                 {
@@ -131,7 +124,7 @@ namespace Microsoft.AspNetCore.Proxy
             }
         }
 
-        private async Task HandleHttpRequest(HttpContext context)
+        private async Task ForwardStandardHttpRequestTo(HttpContext context, string scheme, HostString host, PathString path, QueryString query)
         { 
             var requestMessage = new HttpRequestMessage();
             var requestMethod = context.Request.Method;
@@ -153,8 +146,8 @@ namespace Microsoft.AspNetCore.Proxy
                 }
             }
 
-            requestMessage.Headers.Host = _options.Host + ":" + _options.Port;
-            var uriString = $"{_options.Scheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
+            requestMessage.Headers.Host = host.ToString();
+            var uriString = UriHelper.BuildAbsolute(scheme, host, path, context.Request.Path, query.Add(context.Request.QueryString));
             requestMessage.RequestUri = new Uri(uriString);
             requestMessage.Method = new HttpMethod(context.Request.Method);
             using (var responseMessage = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted))

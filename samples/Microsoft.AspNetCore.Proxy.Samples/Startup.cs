@@ -3,6 +3,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -10,15 +11,7 @@ namespace Microsoft.AspNetCore.Proxy
     {
         public void Configure(IApplicationBuilder app)
         {
-            const string scheme = "https";
-            const string host = "example.com";
-            const string port = "443";
-            app.UseWebSockets().RunProxy(new ProxyOptions
-            {
-                Scheme = scheme,
-                Host = host,
-                Port = port
-            });
+            app.UseWebSockets().RunProxy("https", new HostString("example.com"));
         }
 
         public static void Main(string[] args)
