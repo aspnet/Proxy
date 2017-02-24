@@ -39,7 +39,7 @@ namespace Microsoft.AspNetCore.Proxy
             _next = next;
             _options = options.Value;
 
-            _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler());
+            _httpClient = new HttpClient(_options.BackChannelMessageHandler ?? new HttpClientHandler() { AllowAutoRedirect = false });
         }
 
         public Task Invoke(HttpContext context)
