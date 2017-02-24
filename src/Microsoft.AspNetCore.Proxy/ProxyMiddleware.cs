@@ -96,11 +96,6 @@ namespace Microsoft.AspNetCore.Proxy
                     context.Response.StatusCode = 400;
                     return;
                 }
-                catch (OperationCanceledException)
-                {
-                    context.Response.StatusCode = 500;
-                    return;
-                }
 
                 using (var server = await context.WebSockets.AcceptWebSocketAsync(client.SubProtocol))
                 {
