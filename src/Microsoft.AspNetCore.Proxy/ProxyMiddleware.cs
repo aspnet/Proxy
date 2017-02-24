@@ -91,9 +91,14 @@ namespace Microsoft.AspNetCore.Proxy
                 {
                     await client.ConnectAsync(new Uri(uriString), context.RequestAborted);
                 }
-                catch (WebSocketException ex)
+                catch (WebSocketException)
                 {
-                    HandleWebSocketConnectError(context, ex);
+                    context.Response.StatusCode = 400;
+                    return;
+                }
+                catch (OperationCanceledException)
+                {
+                    context.Response.StatusCode = 500;
                     return;
                 }
 
@@ -104,25 +109,29 @@ namespace Microsoft.AspNetCore.Proxy
             }
         }
 
-        private void HandleWebSocketConnectError(HttpContext context, WebSocketException ex)
-        {
-            context.Response.StatusCode = 400;
-        }
-
-        private async Task PumpWebSocket(WebSocket source, WebSocket dest, CancellationToken ct)
+        private async Task PumpWebSocket(WebSocket source, WebSocket destination, CancellationToken cancellationToken)
         {
             var buffer = new byte[_options.WebSocketBufferSize ?? DefaultWebSocketBufferSize];
             while (true)
             {
-                var res = await source.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
-                if (res.MessageType == WebSocketMessageType.Close)
+                WebSocketReceiveResult result;
+                try
                 {
-                    await dest.CloseOutputAsync(source.CloseStatus.Value, source.CloseStatusDescription, ct);
+                    result = await source.ReceiveAsync(new ArraySegment<byte>(buffer), cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    await destination.CloseOutputAsync(WebSocketCloseStatus.InternalServerError, null, cancellationToken);
+                    return;
+                }
+                if (result.MessageType == WebSocketMessageType.Close)
+                {
+                    await destination.CloseOutputAsync(source.CloseStatus.Value, source.CloseStatusDescription, cancellationToken);
                     return;
                 }
                 else
                 {
-                    await dest.SendAsync(new ArraySegment<byte>(buffer, 0, res.Count), res.MessageType, res.EndOfMessage, ct);
+                    await destination.SendAsync(new ArraySegment<byte>(buffer, 0, result.Count), result.MessageType, result.EndOfMessage, cancellationToken);
                 }
             }
         }

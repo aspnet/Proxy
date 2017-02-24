@@ -16,16 +16,16 @@ namespace Microsoft.AspNetCore.Proxy.Test
     {
         private static async Task<string> ReceiveTextMessage(WebSocket socket, int maxLen = 4096)
         {
-            var recvBuff = new byte[maxLen];
+            var buffer = new byte[maxLen];
             var received = 0;
             while (true)
             {
-                var res = await socket.ReceiveAsync(new ArraySegment<byte>(recvBuff, received, maxLen - received), CancellationToken.None);
-                Assert.Equal(WebSocketMessageType.Text, res.MessageType);
-                received += res.Count;
-                if (res.EndOfMessage)
+                var result = await socket.ReceiveAsync(new ArraySegment<byte>(buffer, received, maxLen - received), CancellationToken.None);
+                Assert.Equal(WebSocketMessageType.Text, result.MessageType);
+                received += result.Count;
+                if (result.EndOfMessage)
                 {
-                    return Encoding.UTF8.GetString(recvBuff, 0, received);
+                    return Encoding.UTF8.GetString(buffer, 0, received);
                 }
                 Assert.InRange(received, 0, maxLen);
             }
@@ -69,10 +69,10 @@ namespace Microsoft.AspNetCore.Proxy.Test
                 var message3 = await ReceiveTextMessage(client);
                 Assert.Equal(message3Content, message3);
 
-                var recv = await client.ReceiveAsync(new ArraySegment<byte>(new byte[4096]), CancellationToken.None);
-                Assert.Equal(WebSocketMessageType.Close, recv.MessageType);
-                Assert.Equal(WebSocketCloseStatus.NormalClosure, recv.CloseStatus);
-                Assert.Equal(closeStatusDescription, recv.CloseStatusDescription);
+                var result = await client.ReceiveAsync(new ArraySegment<byte>(new byte[4096]), CancellationToken.None);
+                Assert.Equal(WebSocketMessageType.Close, result.MessageType);
+                Assert.Equal(WebSocketCloseStatus.NormalClosure, result.CloseStatus);
+                Assert.Equal(closeStatusDescription, result.CloseStatusDescription);
 
                 await client.CloseOutputAsync(WebSocketCloseStatus.NormalClosure, closeStatusDescription, CancellationToken.None);
             }
