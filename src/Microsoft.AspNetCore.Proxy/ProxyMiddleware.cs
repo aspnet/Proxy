@@ -116,7 +116,7 @@ namespace Microsoft.AspNetCore.Proxy
                 }
                 catch (OperationCanceledException)
                 {
-                    await destination.CloseOutputAsync(WebSocketCloseStatus.InternalServerError, null, cancellationToken);
+                    await destination.CloseOutputAsync(WebSocketCloseStatus.EndpointUnavailable, null, cancellationToken);
                     return;
                 }
                 if (result.MessageType == WebSocketMessageType.Close)
