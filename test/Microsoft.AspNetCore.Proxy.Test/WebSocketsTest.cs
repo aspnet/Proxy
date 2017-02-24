@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Proxy.Test
@@ -55,7 +56,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
                 })).Start("http://localhost:4001"))
             using (var proxy = new WebHostBuilder()
                 .UseKestrel()
-                .Configure(app => app.UseWebSockets().RunProxy(new ProxyOptions { Scheme = "http", Host = "localhost", Port = "4001" }))
+                .Configure(app => app.UseWebSockets().RunProxy("http", new HostString("localhost", 4001)))
                 .Start("http://localhost:4002"))
             using (var client = new ClientWebSocket())
             {
