@@ -106,12 +106,6 @@ namespace Microsoft.AspNetCore.Proxy
 
         private void HandleWebSocketConnectError(HttpContext context, WebSocketException ex)
         {
-            //WebException is not available in netstandard13
-            //TODO: Uncomment and forward response when implemented
-            //var res = (ex.InnerException as WebException)?.Response;
-            //if (res != null)
-            //{
-            //}
             context.Response.StatusCode = 400;
         }
 
