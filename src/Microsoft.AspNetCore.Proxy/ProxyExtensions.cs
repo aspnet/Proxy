@@ -38,15 +38,14 @@ namespace Microsoft.AspNetCore.Builder
 
             if (context.WebSockets.IsWebSocketRequest)
             {
-                var wsDestinationUri = new Uri(ProxyUtils.TranslateUriToWebSocketScheme(destinationUri.ToString()));
-                await ProxyUtils.ForwardWebSocketRequest(context, wsDestinationUri);
+                await context.AcceptProxyWebSocketRequest(destinationUri.ToWebSocketScheme());
             }
             else
             {
-                using (var requestMessage = ProxyUtils.PrepareHttpRequestMessage(context.Request, destinationUri))
-                using (var responseMessage = await ProxyUtils.ForwardHttpRequestMessageToServer(context, requestMessage))
+                using (var requestMessage = context.CreateProxyHttpRequest(destinationUri))
+                using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
                 {
-                    await ProxyUtils.ForwardHttpResponseMessageToClient(responseMessage, context.Response);
+                    await context.ReceiveProxyHttpResponse(responseMessage);
                 }
             }
         }

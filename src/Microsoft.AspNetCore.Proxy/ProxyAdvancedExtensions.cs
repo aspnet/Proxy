@@ -8,44 +8,39 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    public static class ProxyUtils
+    public static class ProxyAdvancedExtentions
     {
         private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
         private const int DefaultWebSocketBufferSize = 4096;
 
-        public static string TranslateUriToWebSocketScheme(string uri)
+        public static Uri ToWebSocketScheme(this Uri uri)
         {
             if (uri == null)
             {
                 throw new ArgumentNullException(nameof(uri));
             }
 
-            string scheme;
-            HostString host;
-            PathString path;
-            QueryString query;
-            FragmentString fragment;
-            UriHelper.FromAbsolute(uri, out scheme, out host, out path, out query, out fragment);
-
-            if (string.Equals(scheme, "https", StringComparison.OrdinalIgnoreCase))
+            var uriBuilder = new UriBuilder(uri);
+            if (string.Equals(uriBuilder.Scheme, "https", StringComparison.OrdinalIgnoreCase))
             {
-                scheme = "wss";
+                uriBuilder.Scheme = "wss";
             }
-            else if (string.Equals(scheme, "http", StringComparison.OrdinalIgnoreCase))
+            else if (string.Equals(uriBuilder.Scheme, "http", StringComparison.OrdinalIgnoreCase))
             {
-                scheme = "ws";
+                uriBuilder.Scheme = "ws";
             }
 
-            return UriHelper.BuildAbsolute(scheme, host, path, query: query);
+            return uriBuilder.Uri;
         }
 
-        public static HttpRequestMessage PrepareHttpRequestMessage(HttpRequest request, Uri uri)
+        public static HttpRequestMessage CreateProxyHttpRequest(this HttpContext context, Uri uri)
         {
+            var request = context.Request;
+
             var requestMessage = new HttpRequestMessage();
             var requestMethod = request.Method;
             if (!HttpMethods.IsGet(requestMethod) &&
@@ -73,7 +68,7 @@ namespace Microsoft.AspNetCore.Proxy
             return requestMessage;
         }
 
-        public static async Task<bool> ForwardWebSocketRequest(HttpContext context, Uri destinationUri)
+        public static async Task<bool> AcceptProxyWebSocketRequest(this HttpContext context, Uri destinationUri)
         {
             if (context == null)
             {
@@ -157,15 +152,27 @@ namespace Microsoft.AspNetCore.Proxy
             }
         }
 
-        public static Task<HttpResponseMessage> ForwardHttpRequestMessageToServer(HttpContext context, HttpRequestMessage requestMessage)
+        public static Task<HttpResponseMessage> SendProxyHttpRequest(this HttpContext context, HttpRequestMessage requestMessage)
         {
+            if (requestMessage == null)
+            {
+                throw new ArgumentNullException(nameof(requestMessage));
+            }
+
             var proxyService = context.RequestServices.GetRequiredService<ProxyService>();
 
             return proxyService.Client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         }
 
-        public static Task ForwardHttpResponseMessageToClient(HttpResponseMessage responseMessage, HttpResponse response)
+        public static Task ReceiveProxyHttpResponse(this HttpContext context, HttpResponseMessage responseMessage)
         {
+            if (responseMessage == null)
+            {
+                throw new ArgumentNullException(nameof(responseMessage));
+            }
+
+            var response = context.Response;
+
             response.StatusCode = (int)responseMessage.StatusCode;
             foreach (var header in responseMessage.Headers)
             {
