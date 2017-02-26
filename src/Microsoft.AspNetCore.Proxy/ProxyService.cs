@@ -16,7 +16,11 @@ namespace Microsoft.AspNetCore.Proxy
             }
 
             Options = options;
+#if NET46
+            Client = new HttpClient(options.MessageHandler ?? new WinHttpHandler { AutomaticRedirection = false });
+#else
             Client = new HttpClient(options.MessageHandler ?? new HttpClientHandler { AllowAutoRedirect = false });
+#endif
         }
 
         public SharedProxyOptions Options { get; private set; }
