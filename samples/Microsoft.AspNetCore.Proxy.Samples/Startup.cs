@@ -4,11 +4,17 @@
 using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Proxy
 {
     public class Startup
     {
+        public void ConfigureServices(IServiceCollection services)
+        {
+            services.AddProxy();
+        }
+
         public void Configure(IApplicationBuilder app)
         {
             app.UseWebSockets().RunProxy(new Uri("https://example.com"));
