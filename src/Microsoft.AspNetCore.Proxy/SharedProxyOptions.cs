@@ -3,22 +3,21 @@
 
 using System;
 using System.Net.Http;
-using System.Threading.Tasks;
 
-namespace Microsoft.AspNetCore.Builder
+namespace Microsoft.AspNetCore.Proxy
 {
     /// <summary>
-    /// Options to configure Proxy
+    /// Shared Proxy Options
     /// </summary>
-    public class ProxyOptions
+    public class SharedProxyOptions
     {
         private int? _webSocketBufferSize;
 
-        public HttpMessageHandler BackChannelMessageHandler { get; set; }
+        public HttpMessageHandler MessageHandler { get; set; }
         public TimeSpan? WebSocketKeepAliveInterval { get; set; }
         public int? WebSocketBufferSize
         {
-            get => _webSocketBufferSize;
+            get { return _webSocketBufferSize; }
             set
             {
                 if (value.HasValue && value.Value <= 0)
@@ -28,7 +27,5 @@ namespace Microsoft.AspNetCore.Builder
                 _webSocketBufferSize = value;
             }
         }
-
-        public Func<ProxyRoutingContext, Task> RouteHandler { get; set; }
     }
 }

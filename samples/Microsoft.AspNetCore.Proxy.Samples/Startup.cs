@@ -1,9 +1,9 @@
 // Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
+using System;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -11,7 +11,7 @@ namespace Microsoft.AspNetCore.Proxy
     {
         public void Configure(IApplicationBuilder app)
         {
-            app.UseWebSockets().RunProxy("https", new HostString("example.com"));
+            app.UseWebSockets().RunProxy(new Uri("https://example.com"));
         }
 
         public static void Main(string[] args)
