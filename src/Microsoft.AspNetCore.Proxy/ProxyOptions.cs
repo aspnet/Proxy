@@ -7,9 +7,9 @@ using System.Net.Http;
 namespace Microsoft.AspNetCore.Proxy
 {
     /// <summary>
-    /// Shared Proxy Options
+    /// Proxy Options
     /// </summary>
-    public class SharedProxyOptions
+    public class ProxyOptions
     {
         private int? _webSocketBufferSize;
 

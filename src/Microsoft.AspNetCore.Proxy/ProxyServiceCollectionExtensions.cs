@@ -8,19 +8,18 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddProxy(this IServiceCollection services)
         {
-            return services.AddSingleton(new ProxyService(new SharedProxyOptions()));
+            return services.AddSingleton<ProxyService>();
         }
 
-        public static IServiceCollection AddProxy(this IServiceCollection services, Action<SharedProxyOptions> configureOptions)
+        public static IServiceCollection AddProxy(this IServiceCollection services, Action<ProxyOptions> configureOptions)
         {
             if (configureOptions == null)
             {
                 throw new ArgumentNullException(nameof(configureOptions));
             }
 
-            var options = new SharedProxyOptions();
-            configureOptions(options);
-            return services.AddSingleton(new ProxyService(options));
+            services.Configure(configureOptions);
+            return services.AddSingleton<ProxyService>();
         }
     }
 }
