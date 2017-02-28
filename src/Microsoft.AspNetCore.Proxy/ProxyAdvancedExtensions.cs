@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    static class ProxyAdvancedExtentions
+    internal static class ProxyAdvancedExtentions
     {
         private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
         private const int DefaultWebSocketBufferSize = 4096;
