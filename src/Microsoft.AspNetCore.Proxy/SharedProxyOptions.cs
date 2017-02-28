@@ -19,14 +19,17 @@ namespace Microsoft.AspNetCore.Proxy
         /// Message handler used for http message forwarding.
         /// </summary>
         public HttpMessageHandler MessageHandler { get; set; }
+
         /// <summary>
         /// Allows to modify HttpRequestMessage before it is sent to the Message Handler.
         /// </summary>
         public Func<HttpRequest, HttpRequestMessage, Task> PrepareRequest { get; set; }
+
         /// <summary>
         /// Keep-alive interval for proxied Web Socket connections.
         /// </summary>
         public TimeSpan? WebSocketKeepAliveInterval { get; set; }
+
         /// <summary>
         /// Internal send and receive buffers size for proxied Web Socket connections.
         /// </summary>
