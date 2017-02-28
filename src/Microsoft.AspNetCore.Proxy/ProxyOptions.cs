@@ -3,6 +3,8 @@
 
 using System;
 using System.Net.Http;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -14,6 +16,7 @@ namespace Microsoft.AspNetCore.Proxy
         private int? _webSocketBufferSize;
 
         public HttpMessageHandler MessageHandler { get; set; }
+        public Func<HttpRequest, HttpRequestMessage, Task> PrepareRequest { get; set; }
         public TimeSpan? WebSocketKeepAliveInterval { get; set; }
         public int? WebSocketBufferSize
         {

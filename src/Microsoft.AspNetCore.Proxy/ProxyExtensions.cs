@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Proxy;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Builder
 {
@@ -42,10 +43,20 @@ namespace Microsoft.AspNetCore.Builder
             }
             else
             {
+                var proxyService = context.RequestServices.GetRequiredService<ProxyService>();
+
                 using (var requestMessage = context.CreateProxyHttpRequest(destinationUri))
-                using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
                 {
-                    await context.ReceiveProxyHttpResponse(responseMessage);
+                    var prepareRequestHandler = proxyService.Options.PrepareRequest;
+                    if (prepareRequestHandler != null)
+                    {
+                        await prepareRequestHandler(context.Request, requestMessage);
+                    }
+
+                    using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
+                    {
+                        await context.ReceiveProxyHttpResponse(responseMessage);
+                    }
                 }
             }
         }
