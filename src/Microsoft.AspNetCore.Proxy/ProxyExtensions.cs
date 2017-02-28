@@ -13,12 +13,16 @@ namespace Microsoft.AspNetCore.Builder
     public static class ProxyExtensions
     {
         /// <summary>
-        /// Sends request to the specified server
+        /// Runs proxy forwarding requests to the server specified by base uri.
         /// </summary>
         /// <param name="app"></param>
         /// <param name="baseUri">Destination base uri</param>
         public static void RunProxy(this IApplicationBuilder app, Uri baseUri)
         {
+            if (app == null)
+            {
+                throw new ArgumentNullException(nameof(app));
+            }
             if (baseUri == null)
             {
                 throw new ArgumentNullException(nameof(baseUri));
@@ -35,27 +39,49 @@ namespace Microsoft.AspNetCore.Builder
         }
 
         /// <summary>
-        /// Sends request to the specified server
+        /// Runs proxy forwarding requests to the server specified by options.
+        /// </summary>
+        /// <param name="app"></param>
+        public static void RunProxy(this IApplicationBuilder app)
+        {
+            if (app == null)
+            {
+                throw new ArgumentNullException(nameof(app));
+            }
+
+            app.UseMiddleware<ProxyMiddleware>();
+        }
+
+        /// <summary>
+        /// Runs proxy forwarding requests to the server specified by options.
         /// </summary>
         /// <param name="app"></param>
         /// <param name="options">Proxy options</param>
-        public static void RunProxy(this IApplicationBuilder app, IOptions<ProxyOptions> options)
+        public static void RunProxy(this IApplicationBuilder app, ProxyOptions options)
         {
+            if (app == null)
+            {
+                throw new ArgumentNullException(nameof(app));
+            }
             if (options == null)
             {
                 throw new ArgumentNullException(nameof(options));
             }
 
-            app.UseMiddleware<ProxyMiddleware>(options);
+            app.UseMiddleware<ProxyMiddleware>(Options.Create(options));
         }
 
         /// <summary>
-        /// Sends request to the specified server
+        /// Forwards current request to the specified destination uri.
         /// </summary>
         /// <param name="context"></param>
         /// <param name="destinationUri">Destination Uri</param>
         public static async Task ProxyRequest(this HttpContext context, Uri destinationUri)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
             if (destinationUri == null)
             {
                 throw new ArgumentNullException(nameof(destinationUri));

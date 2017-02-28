@@ -10,7 +10,10 @@ using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    internal sealed class ProxyMiddleware
+    /// <summary>
+    /// Proxy Middleware
+    /// </summary>
+    public sealed class ProxyMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly ProxyOptions _options;
@@ -40,6 +43,11 @@ namespace Microsoft.AspNetCore.Proxy
 
         public Task Invoke(HttpContext context)
         {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+
             var uri = new Uri(UriHelper.BuildAbsolute(_options.Scheme, _options.Host, _options.PathBase, context.Request.Path, context.Request.QueryString.Add(_options.AppendQuery)));
             return context.ProxyRequest(uri);
         }
