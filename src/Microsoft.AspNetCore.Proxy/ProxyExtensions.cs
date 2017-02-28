@@ -55,7 +55,7 @@ namespace Microsoft.AspNetCore.Builder
 
                     using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
                     {
-                        await context.ReceiveProxyHttpResponse(responseMessage);
+                        await context.CopyProxyHttpResponse(responseMessage);
                     }
                 }
             }
