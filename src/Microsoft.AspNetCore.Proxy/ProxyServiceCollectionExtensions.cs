@@ -11,7 +11,7 @@ namespace Microsoft.Extensions.DependencyInjection
             return services.AddSingleton<ProxyService>();
         }
 
-        public static IServiceCollection AddProxy(this IServiceCollection services, Action<ProxyOptions> configureOptions)
+        public static IServiceCollection AddProxy(this IServiceCollection services, Action<SharedProxyOptions> configureOptions)
         {
             if (configureOptions == null)
             {

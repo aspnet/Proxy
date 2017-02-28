@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Proxy;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Builder
 {
@@ -15,14 +16,37 @@ namespace Microsoft.AspNetCore.Builder
         /// Sends request to the specified server
         /// </summary>
         /// <param name="app"></param>
-        /// <param name="destinationUri">Destination Uri</param>
-        public static void RunProxy(this IApplicationBuilder app, Uri destinationUri)
+        /// <param name="baseUri">Destination base uri</param>
+        public static void RunProxy(this IApplicationBuilder app, Uri baseUri)
         {
-            if (destinationUri == null)
+            if (baseUri == null)
             {
-                throw new ArgumentNullException(nameof(destinationUri));
+                throw new ArgumentNullException(nameof(baseUri));
             }
-            app.Run(ctx => ctx.ProxyRequest(destinationUri));
+
+            var options = new ProxyOptions
+            {
+                Scheme = baseUri.Scheme,
+                Host = new HostString(baseUri.Authority),
+                PathBase = baseUri.AbsolutePath,
+                AppendQuery = new QueryString(baseUri.Query)
+            };
+            app.UseMiddleware<ProxyMiddleware>(Options.Create(options));
+        }
+
+        /// <summary>
+        /// Sends request to the specified server
+        /// </summary>
+        /// <param name="app"></param>
+        /// <param name="options">Proxy options</param>
+        public static void RunProxy(this IApplicationBuilder app, IOptions<ProxyOptions> options)
+        {
+            if (options == null)
+            {
+                throw new ArgumentNullException(nameof(options));
+            }
+
+            app.UseMiddleware<ProxyMiddleware>(options);
         }
 
         /// <summary>

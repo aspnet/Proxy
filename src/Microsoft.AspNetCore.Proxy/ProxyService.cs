@@ -9,7 +9,7 @@ namespace Microsoft.AspNetCore.Proxy
 {
     internal sealed class ProxyService
     {
-        public ProxyService(IOptions<ProxyOptions> options)
+        public ProxyService(IOptions<SharedProxyOptions> options)
         {
             if (options == null)
             {
@@ -24,7 +24,7 @@ namespace Microsoft.AspNetCore.Proxy
 #endif
         }
 
-        public ProxyOptions Options { get; private set; }
+        public SharedProxyOptions Options { get; private set; }
         public HttpClient Client { get; private set; }
     }
 }
