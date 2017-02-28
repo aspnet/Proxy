@@ -66,15 +66,24 @@ namespace Microsoft.AspNetCore.Proxy.Test
         [InlineData("NewHttpMethod", 3008)]
         public async Task PassthroughRequestsWithBody(string MethodType, int Port)
         {
+            const string hostHeader = "mydomain.example";
             var builder = new WebHostBuilder()
                 .ConfigureServices(services => services.AddProxy(options =>
                 {
+                    options.PrepareRequest = (originalRequest, message) =>
+                    {
+                        message.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
+                        return Task.FromResult(0);
+                    };
                     options.MessageHandler = new TestMessageHandler
                     {
                         Sender = req =>
                         {
                             IEnumerable<string> hostValue;
                             req.Headers.TryGetValues("Host", out hostValue);
+                            IEnumerable<string> forwardedHostValue;
+                            req.Headers.TryGetValues("X-Forwarded-Host", out forwardedHostValue);
+                            Assert.Equal(hostHeader, forwardedHostValue.Single());
                             Assert.Equal("localhost:" + Port, hostValue.Single());
                             Assert.Equal("http://localhost:" + Port + "/", req.RequestUri.ToString());
                             Assert.Equal(new HttpMethod(MethodType), req.Method);
@@ -88,10 +97,14 @@ namespace Microsoft.AspNetCore.Proxy.Test
                         }
                     };
                 }))
-                .Configure(app => app.RunProxy(new Uri($"http://localhost:{Port}")));
+                .Configure(app => app.RunProxy(new ProxyOptions
+                {
+                    Scheme = "http",
+                    Host = new HostString("localhost", Port),
+                }));
             var server = new TestServer(builder);
 
-            var requestMessage = new HttpRequestMessage(new HttpMethod(MethodType), "");
+            var requestMessage = new HttpRequestMessage(new HttpMethod(MethodType), "http://mydomain.example");
             requestMessage.Content = new StringContent("Request Body");
             var responseMessage = await server.CreateClient().SendAsync(requestMessage);
             var responseContent = responseMessage.Content.ReadAsStringAsync();

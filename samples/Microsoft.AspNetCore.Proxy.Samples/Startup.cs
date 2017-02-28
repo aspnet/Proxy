@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +13,14 @@ namespace Microsoft.AspNetCore.Proxy
     {
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddProxy();
+            services.AddProxy(options =>
+            {
+                options.PrepareRequest = (originalRequest, message) =>
+                {
+                    message.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
+                    return Task.FromResult(0);
+                };
+            });
         }
 
         public void Configure(IApplicationBuilder app)
