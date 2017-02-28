@@ -8,7 +8,7 @@ namespace Microsoft.AspNetCore.Proxy
     /// <summary>
     /// Proxy Options
     /// </summary>
-    public sealed class ProxyOptions
+    public class ProxyOptions
     {
         /// <summary>
         /// Destination uri scheme

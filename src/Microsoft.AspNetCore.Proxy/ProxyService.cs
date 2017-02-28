@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    internal sealed class ProxyService
+    internal class ProxyService
     {
         public ProxyService(IOptions<SharedProxyOptions> options)
         {

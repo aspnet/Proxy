@@ -13,7 +13,7 @@ namespace Microsoft.AspNetCore.Proxy
     /// <summary>
     /// Proxy Middleware
     /// </summary>
-    public sealed class ProxyMiddleware
+    public class ProxyMiddleware
     {
         private readonly RequestDelegate _next;
         private readonly ProxyOptions _options;

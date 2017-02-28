@@ -16,6 +16,7 @@ namespace Microsoft.AspNetCore.Proxy
     {
         private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
         private const int DefaultWebSocketBufferSize = 4096;
+        private const int StreamCopyBufferSize = 81920;
 
         public static Uri ToWebSocketScheme(this Uri uri)
         {
@@ -161,7 +162,7 @@ namespace Microsoft.AspNetCore.Proxy
             return proxyService.Client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         }
 
-        public static Task CopyProxyHttpResponse(this HttpContext context, HttpResponseMessage responseMessage)
+        public static async Task CopyProxyHttpResponse(this HttpContext context, HttpResponseMessage responseMessage)
         {
             if (responseMessage == null)
             {
@@ -183,7 +184,11 @@ namespace Microsoft.AspNetCore.Proxy
 
             // SendAsync removes chunking from the response. This removes the header so it doesn't expect a chunked response.
             response.Headers.Remove("transfer-encoding");
-            return responseMessage.Content.CopyToAsync(response.Body);
+
+            using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())
+            {
+                await responseStream.CopyToAsync(response.Body, StreamCopyBufferSize, context.RequestAborted);
+            }
         }
     }
 }
