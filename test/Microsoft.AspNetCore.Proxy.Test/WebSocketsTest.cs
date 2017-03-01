@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Testing.xunit;
 using Xunit;
 
 namespace Microsoft.AspNetCore.Proxy.Test
@@ -32,6 +33,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
         }
 
         [Fact]
+        [OSSkipCondition(OperatingSystems.Windows, WindowsVersions.Win7, WindowsVersions.Win2008R2, SkipReason = "No WebSockets Client for this platform")]
         public async Task ProxyWebSocketsSmokeTest()
         {
             const string supportedSubProtocol = "myproto2";
