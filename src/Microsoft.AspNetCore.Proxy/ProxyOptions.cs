@@ -1,18 +1,33 @@
-// Copyright (c) .NET Foundation. All rights reserved.
+﻿// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
-using System.Net.Http;
+using Microsoft.AspNetCore.Http;
 
-namespace Microsoft.AspNetCore.Builder
+namespace Microsoft.AspNetCore.Proxy
 {
     /// <summary>
-    /// Options to configure host, scheme, and port settings
+    /// Proxy Options
     /// </summary>
     public class ProxyOptions
     {
+        /// <summary>
+        /// Destination uri scheme
+        /// </summary>
         public string Scheme { get; set; }
-        public string Host { get; set; }
-        public string Port { get; set; }
-        public HttpMessageHandler BackChannelMessageHandler { get; set; }
+
+        /// <summary>
+        /// Destination uri host
+        /// </summary>
+        public HostString Host { get; set; }
+
+        /// <summary>
+        /// Destination uri path base to which current Path will be appended
+        /// </summary>
+        public PathString PathBase { get; set; }
+
+        /// <summary>
+        /// Query string parameters to append to each request
+        /// </summary>
+        public QueryString AppendQuery { get; set; }
     }
 }
