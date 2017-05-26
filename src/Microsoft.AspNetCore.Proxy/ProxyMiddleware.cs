@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    public class ProxyMiddleware
+    public class ProxyMiddleware : IDisposable
     {
         private const int DefaultWebSocketBufferSize = 4096;
 
@@ -130,31 +130,9 @@ namespace Microsoft.AspNetCore.Proxy
         }
 
         private async Task HandleHttpRequest(HttpContext context)
-        { 
-            var requestMessage = new HttpRequestMessage();
-            var requestMethod = context.Request.Method;
-            if (!HttpMethods.IsGet(requestMethod)&&
-                !HttpMethods.IsHead(requestMethod) &&
-                !HttpMethods.IsDelete(requestMethod)&&
-                !HttpMethods.IsTrace(requestMethod))
-            {
-                var streamContent = new StreamContent(context.Request.Body);
-                requestMessage.Content = streamContent;
-            }
+        {
+            HttpRequestMessage requestMessage = CreateRequestMessage(context.Request);
 
-            // Copy the request headers
-            foreach (var header in context.Request.Headers)
-            {
-                if (!requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray()) && requestMessage.Content != null)
-                {
-                    requestMessage.Content?.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
-                }
-            }
-
-            requestMessage.Headers.Host = _options.Host + ":" + _options.Port;
-            var uriString = $"{_options.Scheme}://{_options.Host}:{_options.Port}{context.Request.PathBase}{context.Request.Path}{context.Request.QueryString}";
-            requestMessage.RequestUri = new Uri(uriString);
-            requestMessage.Method = new HttpMethod(context.Request.Method);
             using (var responseMessage = await _httpClient.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted))
             {
                 context.Response.StatusCode = (int)responseMessage.StatusCode;
@@ -172,6 +150,44 @@ namespace Microsoft.AspNetCore.Proxy
                 context.Response.Headers.Remove("transfer-encoding");
                 await responseMessage.Content.CopyToAsync(context.Response.Body);
             }
+        }
+
+        private HttpRequestMessage CreateRequestMessage(HttpRequest request)
+        {
+            var uriString = $"{_options.Scheme}://{_options.Host}:{_options.Port}{request.PathBase}{request.Path}{request.QueryString}";
+            var requestMessage = new HttpRequestMessage
+            {
+                Method = new HttpMethod(request.Method),
+                RequestUri = new Uri(uriString)
+            };
+
+            var requestMethod = request.Method;
+            if (!HttpMethods.IsGet(requestMethod) &&
+                !HttpMethods.IsHead(requestMethod) &&
+                !HttpMethods.IsDelete(requestMethod) &&
+                !HttpMethods.IsTrace(requestMethod))
+            {
+                var streamContent = new StreamContent(request.Body);
+                requestMessage.Content = streamContent;
+            }
+
+            // Copy the request headers
+            foreach (var header in request.Headers)
+            {
+                if (!requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray()) && requestMessage.Content != null)
+                {
+                    requestMessage.Content.Headers.TryAddWithoutValidation(header.Key, header.Value.ToArray());
+                }
+            }
+
+            requestMessage.Headers.Host = $"{_options.Host}:{_options.Port}";
+
+            return requestMessage;
+        }
+
+        public void Dispose()
+        {
+            _httpClient?.Dispose();
         }
     }
 }
