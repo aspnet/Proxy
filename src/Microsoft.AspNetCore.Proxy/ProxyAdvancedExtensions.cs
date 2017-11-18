@@ -88,13 +88,13 @@ namespace Microsoft.AspNetCore.Proxy
 
             using (var client = new ClientWebSocket())
             {
-                /*foreach (var headerEntry in context.Request.Headers)
+                foreach (var headerEntry in context.Request.Headers)
                 {
                     if (!NotForwardedWebSocketHeaders.Contains(headerEntry.Key, StringComparer.OrdinalIgnoreCase))
                     {
                         client.Options.SetRequestHeader(headerEntry.Key, headerEntry.Value);
                     }
-                }*/
+                }
 
                 if (proxyService.Options.WebSocketKeepAliveInterval.HasValue)
                 {
