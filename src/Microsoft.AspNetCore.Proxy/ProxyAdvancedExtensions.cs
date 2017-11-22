@@ -88,6 +88,11 @@ namespace Microsoft.AspNetCore.Proxy
 
             using (var client = new ClientWebSocket())
             {
+                foreach (var protocol in context.WebSockets.WebSocketRequestedProtocols)
+                {
+                    client.Options.AddSubProtocol(protocol);
+                }
+                
                 foreach (var headerEntry in context.Request.Headers)
                 {
                     if (!NotForwardedWebSocketHeaders.Contains(headerEntry.Key, StringComparer.OrdinalIgnoreCase))
