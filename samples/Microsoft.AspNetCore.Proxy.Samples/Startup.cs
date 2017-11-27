@@ -15,6 +15,7 @@ namespace Microsoft.AspNetCore.Proxy
         {
             services.AddProxy(options =>
             {
+                options.GetProxyOptions = request => Task.FromResult(ProxyOptions.FromUri(new Uri("https://example.com")));
                 options.PrepareRequest = (originalRequest, message) =>
                 {
                     message.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
@@ -25,7 +26,7 @@ namespace Microsoft.AspNetCore.Proxy
 
         public void Configure(IApplicationBuilder app)
         {
-            app.UseWebSockets().RunProxy(new Uri("https://example.com"));
+            app.UseWebSockets().RunProxy();
         }
 
         public static void Main(string[] args)

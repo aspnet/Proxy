@@ -58,8 +58,11 @@ namespace Microsoft.AspNetCore.Proxy.Test
                 })).Start("http://localhost:4001"))
             using (var proxy = new WebHostBuilder()
                 .UseKestrel()
-                .ConfigureServices(services => services.AddProxy())
-                .Configure(app => app.UseWebSockets().RunProxy(new Uri("http://localhost:4001")))
+                .ConfigureServices(services => services.AddProxy(options =>
+                {
+                    options.GetProxyOptions = request => Task.FromResult(ProxyOptions.FromUri(new Uri($"http://localhost:4001")));
+                }))
+                .Configure(app => app.UseWebSockets().RunProxy())
                 .Start("http://localhost:4002"))
             using (var client = new ClientWebSocket())
             {
