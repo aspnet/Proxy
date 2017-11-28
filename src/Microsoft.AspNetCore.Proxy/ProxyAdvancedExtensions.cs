@@ -12,31 +12,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    internal static class ProxyAdvancedExtensions
+    public static class ProxyAdvancedExtensions
     {
         private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
         private const int DefaultWebSocketBufferSize = 4096;
         private const int StreamCopyBufferSize = 81920;
-
-        public static Uri ToWebSocketScheme(this Uri uri)
-        {
-            if (uri == null)
-            {
-                throw new ArgumentNullException(nameof(uri));
-            }
-
-            var uriBuilder = new UriBuilder(uri);
-            if (string.Equals(uriBuilder.Scheme, "https", StringComparison.OrdinalIgnoreCase))
-            {
-                uriBuilder.Scheme = "wss";
-            }
-            else if (string.Equals(uriBuilder.Scheme, "http", StringComparison.OrdinalIgnoreCase))
-            {
-                uriBuilder.Scheme = "ws";
-            }
-
-            return uriBuilder.Uri;
-        }
 
         /// <summary>
         /// Forwards current request to the specified destination uri.
@@ -76,6 +56,26 @@ namespace Microsoft.AspNetCore.Proxy
                     }
                 }
             }
+        }
+
+        private static Uri ToWebSocketScheme(this Uri uri)
+        {
+            if (uri == null)
+            {
+                throw new ArgumentNullException(nameof(uri));
+            }
+
+            var uriBuilder = new UriBuilder(uri);
+            if (string.Equals(uriBuilder.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            {
+                uriBuilder.Scheme = "wss";
+            }
+            else if (string.Equals(uriBuilder.Scheme, "http", StringComparison.OrdinalIgnoreCase))
+            {
+                uriBuilder.Scheme = "ws";
+            }
+
+            return uriBuilder.Uri;
         }
 
         private static HttpRequestMessage CreateProxyHttpRequest(this HttpContext context, Uri uri)
