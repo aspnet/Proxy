@@ -48,6 +48,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
                 .UseKestrel()
                 .Configure(app => app.UseWebSockets().Run(async ctx =>
                 {
+                    Assert.Equal("Test-Header-Value", ctx.Request.Headers["X-Test-Header"]);
                     var socket = await ctx.WebSockets.AcceptWebSocketAsync(supportedSubProtocol);
                     var message1 = await ReceiveTextMessage(socket);
                     var message2 = await ReceiveTextMessage(socket);
@@ -58,7 +59,14 @@ namespace Microsoft.AspNetCore.Proxy.Test
                 })).Start("http://localhost:4001"))
             using (var proxy = new WebHostBuilder()
                 .UseKestrel()
-                .ConfigureServices(services => services.AddProxy())
+                .ConfigureServices(services => services.AddProxy(options =>
+                {
+                    options.PrepareWebSocketClient = (originalRequest, client) =>
+                    {
+                        client.Options.SetRequestHeader("X-Test-Header", "Test-Header-Value");
+                        return Task.CompletedTask;
+                    };
+                }))
                 .Configure(app => app.UseWebSockets().RunProxy(new Uri("http://localhost:4001")))
                 .Start("http://localhost:4002"))
             using (var client = new ClientWebSocket())

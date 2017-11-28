@@ -3,6 +3,7 @@
 
 using System;
 using System.Net.Http;
+using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 
@@ -24,6 +25,11 @@ namespace Microsoft.AspNetCore.Proxy
         /// Allows to modify HttpRequestMessage before it is sent to the Message Handler.
         /// </summary>
         public Func<HttpRequest, HttpRequestMessage, Task> PrepareRequest { get; set; }
+
+        /// <summary>
+        /// Allows to modify ClientWebSocket before the connection is opened.
+        /// </summary>
+        public Func<HttpRequest, ClientWebSocket, Task> PrepareWebSocketClient { get; set; }
 
         /// <summary>
         /// Keep-alive interval for proxied Web Socket connections.
