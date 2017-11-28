@@ -3,10 +3,8 @@
 
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
-using Microsoft.Extensions.Options;
 
 namespace Microsoft.AspNetCore.Proxy
 {
@@ -15,45 +13,25 @@ namespace Microsoft.AspNetCore.Proxy
     /// </summary>
     public class ProxyMiddleware
     {
-        private const int DefaultWebSocketBufferSize = 4096;
-
         private readonly RequestDelegate _next;
-        private readonly ProxyOptions _options;
+        private readonly ProxyService _proxyService;
 
-        private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
-
-        public ProxyMiddleware(RequestDelegate next, IOptions<ProxyOptions> options)
+        public ProxyMiddleware(RequestDelegate next, ProxyService proxyService)
         {
-            if (next == null)
-            {
-                throw new ArgumentNullException(nameof(next));
-            }
-            if (options == null)
-            {
-                throw new ArgumentNullException(nameof(options));
-            }
-            if (options.Value.Scheme == null)
-            {
-                throw new ArgumentException("Options parameter must specify scheme.", nameof(options));
-            }
-            if (!options.Value.Host.HasValue)
-            {
-                throw new ArgumentException("Options parameter must specify host.", nameof(options));
-            }
-
-            _next = next;
-            _options = options.Value;
+            _next = next ?? throw new ArgumentNullException(nameof(next));
+            _proxyService = proxyService ?? throw new ArgumentNullException(nameof(proxyService));
         }
 
-        public Task Invoke(HttpContext context)
+        public async Task Invoke(HttpContext context)
         {
             if (context == null)
             {
                 throw new ArgumentNullException(nameof(context));
             }
 
-            var uri = new Uri(UriHelper.BuildAbsolute(_options.Scheme, _options.Host, _options.PathBase, context.Request.Path, context.Request.QueryString.Add(_options.AppendQuery)));
-            return context.ProxyRequest(uri);
+            var destination = await _proxyService.Options.GetProxyOptions(context.Request);
+            var uri = new Uri(UriHelper.BuildAbsolute(destination.Scheme, destination.Host, destination.PathBase, context.Request.Path, context.Request.QueryString.Add(destination.AppendQuery)));
+            await context.ProxyRequest(uri);
         }
     }
 }

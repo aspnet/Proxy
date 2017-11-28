@@ -12,13 +12,53 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Microsoft.AspNetCore.Proxy
 {
-    internal static class ProxyAdvancedExtentions
+    public static class ProxyAdvancedExtensions
     {
         private static readonly string[] NotForwardedWebSocketHeaders = new[] { "Connection", "Host", "Upgrade", "Sec-WebSocket-Key", "Sec-WebSocket-Version" };
         private const int DefaultWebSocketBufferSize = 4096;
         private const int StreamCopyBufferSize = 81920;
 
-        public static Uri ToWebSocketScheme(this Uri uri)
+        /// <summary>
+        /// Forwards current request to the specified destination uri.
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="destinationUri">Destination Uri</param>
+        public static async Task ProxyRequest(this HttpContext context, Uri destinationUri)
+        {
+            if (context == null)
+            {
+                throw new ArgumentNullException(nameof(context));
+            }
+            if (destinationUri == null)
+            {
+                throw new ArgumentNullException(nameof(destinationUri));
+            }
+
+            if (context.WebSockets.IsWebSocketRequest)
+            {
+                await context.AcceptProxyWebSocketRequest(destinationUri.ToWebSocketScheme());
+            }
+            else
+            {
+                var proxyService = context.RequestServices.GetRequiredService<ProxyService>();
+
+                using (var requestMessage = context.CreateProxyHttpRequest(destinationUri))
+                {
+                    var prepareRequestHandler = proxyService.Options.PrepareRequest;
+                    if (prepareRequestHandler != null)
+                    {
+                        await prepareRequestHandler(context.Request, requestMessage);
+                    }
+
+                    using (var responseMessage = await context.SendProxyHttpRequest(requestMessage))
+                    {
+                        await context.CopyProxyHttpResponse(responseMessage);
+                    }
+                }
+            }
+        }
+
+        private static Uri ToWebSocketScheme(this Uri uri)
         {
             if (uri == null)
             {
@@ -38,7 +78,7 @@ namespace Microsoft.AspNetCore.Proxy
             return uriBuilder.Uri;
         }
 
-        public static HttpRequestMessage CreateProxyHttpRequest(this HttpContext context, Uri uri)
+        private static HttpRequestMessage CreateProxyHttpRequest(this HttpContext context, Uri uri)
         {
             var request = context.Request;
 
@@ -69,7 +109,7 @@ namespace Microsoft.AspNetCore.Proxy
             return requestMessage;
         }
 
-        public static async Task<bool> AcceptProxyWebSocketRequest(this HttpContext context, Uri destinationUri)
+        private static async Task<bool> AcceptProxyWebSocketRequest(this HttpContext context, Uri destinationUri)
         {
             if (context == null)
             {
@@ -99,6 +139,12 @@ namespace Microsoft.AspNetCore.Proxy
                 if (proxyService.Options.WebSocketKeepAliveInterval.HasValue)
                 {
                     client.Options.KeepAliveInterval = proxyService.Options.WebSocketKeepAliveInterval.Value;
+                }
+
+                var prepareWebSocketClient = proxyService.Options.PrepareWebSocketClient;
+                if (prepareWebSocketClient != null)
+                {
+                    await prepareWebSocketClient(context.Request, client);
                 }
 
                 try
@@ -150,7 +196,7 @@ namespace Microsoft.AspNetCore.Proxy
             }
         }
 
-        public static Task<HttpResponseMessage> SendProxyHttpRequest(this HttpContext context, HttpRequestMessage requestMessage)
+        private static Task<HttpResponseMessage> SendProxyHttpRequest(this HttpContext context, HttpRequestMessage requestMessage)
         {
             if (requestMessage == null)
             {
@@ -162,7 +208,7 @@ namespace Microsoft.AspNetCore.Proxy
             return proxyService.Client.SendAsync(requestMessage, HttpCompletionOption.ResponseHeadersRead, context.RequestAborted);
         }
 
-        public static async Task CopyProxyHttpResponse(this HttpContext context, HttpResponseMessage responseMessage)
+        private static async Task CopyProxyHttpResponse(this HttpContext context, HttpResponseMessage responseMessage)
         {
             if (responseMessage == null)
             {

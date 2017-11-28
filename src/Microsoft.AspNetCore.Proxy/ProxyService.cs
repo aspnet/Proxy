@@ -15,6 +15,10 @@ namespace Microsoft.AspNetCore.Proxy
             {
                 throw new ArgumentNullException(nameof(options));
             }
+            if (options.Value.GetProxyOptions == null)
+            {
+                throw new ArgumentException("options parameter must specify GetProxyOptions", nameof(options));
+            }
 
             Options = options.Value;
             Client = new HttpClient(Options.MessageHandler ?? new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });

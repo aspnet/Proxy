@@ -29,6 +29,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
             var builder = new WebHostBuilder()
                 .ConfigureServices(services => services.AddProxy(options =>
                 {
+                    options.GetProxyOptions = request => Task.FromResult(ProxyOptions.FromUri(new Uri($"http://localhost:{Port}")));
                     options.MessageHandler = new TestMessageHandler
                     {
                         Sender = req =>
@@ -45,7 +46,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
                         }
                     };
                 }))
-                .Configure(app => app.RunProxy(new Uri($"http://localhost:{Port}")));
+                .Configure(app => app.RunProxy());
             var server = new TestServer(builder);
 
             var requestMessage = new HttpRequestMessage(new HttpMethod(MethodType), "");
@@ -70,6 +71,11 @@ namespace Microsoft.AspNetCore.Proxy.Test
             var builder = new WebHostBuilder()
                 .ConfigureServices(services => services.AddProxy(options =>
                 {
+                    options.GetProxyOptions = request => Task.FromResult(new ProxyOptions
+                    {
+                        Scheme = "http",
+                        Host = new HostString("localhost", Port),
+                    });
                     options.PrepareRequest = (originalRequest, message) =>
                     {
                         message.Headers.Add("X-Forwarded-Host", originalRequest.Host.Host);
@@ -97,11 +103,7 @@ namespace Microsoft.AspNetCore.Proxy.Test
                         }
                     };
                 }))
-                .Configure(app => app.RunProxy(new ProxyOptions
-                {
-                    Scheme = "http",
-                    Host = new HostString("localhost", Port),
-                }));
+                .Configure(app => app.RunProxy());
             var server = new TestServer(builder);
 
             var requestMessage = new HttpRequestMessage(new HttpMethod(MethodType), "http://mydomain.example");
