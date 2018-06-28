@@ -9,7 +9,10 @@ namespace Microsoft.AspNetCore.Proxy
 {
     public class ProxyService
     {
-        public ProxyService(IOptions<SharedProxyOptions> options)
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly HttpClient _httpClient;
+
+        public ProxyService(IOptions<SharedProxyOptions> options, IHttpClientFactory httpClientFactory)
         {
             if (options == null)
             {
@@ -17,10 +20,17 @@ namespace Microsoft.AspNetCore.Proxy
             }
 
             Options = options.Value;
-            Client = new HttpClient(Options.MessageHandler ?? new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false });
+            if (Options.MessageHandler != null)
+            {
+                _httpClient = new HttpClient(Options.MessageHandler);
+            }
+            else
+            {
+                _httpClientFactory = httpClientFactory;
+            }
         }
 
         public SharedProxyOptions Options { get; private set; }
-        internal HttpClient Client { get; private set; }
+        internal HttpClient Client => _httpClientFactory?.CreateClient() ?? _httpClient;
     }
 }
