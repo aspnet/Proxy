@@ -15,6 +15,8 @@ namespace Microsoft.Extensions.DependencyInjection
                 throw new ArgumentNullException(nameof(services));
             }
 
+            services.AddHttpClient();
+
             return services.AddSingleton<ProxyService>();
         }
 
@@ -28,6 +30,8 @@ namespace Microsoft.Extensions.DependencyInjection
             {
                 throw new ArgumentNullException(nameof(configureOptions));
             }
+
+            services.AddHttpClient();
 
             services.Configure(configureOptions);
             return services.AddSingleton<ProxyService>();
