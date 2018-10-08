@@ -106,6 +106,12 @@ namespace Microsoft.AspNetCore.Proxy
                     client.Options.KeepAliveInterval = proxyService.Options.WebSocketKeepAliveInterval.Value;
                 }
 
+                var prepareWebSocketClient = proxyService.Options.PrepareWebSocketClient;
+                if (prepareWebSocketClient != null)
+                {
+                    await prepareWebSocketClient(context.Request, client);
+                }
+
                 try
                 {
                     await client.ConnectAsync(destinationUri, context.RequestAborted);
